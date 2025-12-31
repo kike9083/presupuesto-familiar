@@ -67,7 +67,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ transactions, goals })
               <Bot className="w-6 h-6" />
               <div>
                 <h3 className="font-semibold">Copiloto Financiero</h3>
-                <p className="text-xs text-indigo-200">Potenciado por Gemini 3</p>
+                <p className="text-xs text-indigo-200">Potenciado por Gemini 2.0 Flash</p>
               </div>
             </div>
             <button onClick={() => setIsOpen(false)} className="hover:bg-indigo-500 p-1 rounded-full transition-colors">
@@ -83,24 +83,23 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ transactions, goals })
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl p-3 text-sm ${
-                    msg.role === 'user'
+                  className={`max-w-[80%] rounded-2xl p-3 text-sm ${msg.role === 'user'
                       ? 'bg-indigo-600 text-white rounded-br-none'
                       : 'bg-white text-slate-700 border border-slate-200 rounded-bl-none shadow-sm'
-                  }`}
+                    }`}
                 >
                   {msg.text}
                 </div>
               </div>
             ))}
             {isLoading && (
-               <div className="flex justify-start">
-                 <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-none p-3 shadow-sm flex items-center space-x-1">
-                   <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                   <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                   <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                 </div>
-               </div>
+              <div className="flex justify-start">
+                <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-none p-3 shadow-sm flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>
