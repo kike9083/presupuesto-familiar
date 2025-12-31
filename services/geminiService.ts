@@ -31,7 +31,7 @@ export const generateFinancialAdvice = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.0-flash',
       contents: `Contexto: ${financialContext}\n\nConsulta del Usuario: ${query}`,
       config: {
         systemInstruction: systemInstruction,
@@ -48,7 +48,7 @@ export const generateFinancialAdvice = async (
 export const autoCategorizeTransaction = async (description: string): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.0-flash',
             contents: `Categoriza esta descripción de transacción en una sola palabra en ESPAÑOL (ej. Supermercado, Servicios, Entretenimiento, Renta, Salario, Transporte): "${description}"`,
         });
         return response.text?.trim() || "Sin Categoría";
