@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, Receipt, PiggyBank, GraduationCap, Menu, LogOut, Settings, Bell, PlusCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { LayoutDashboard, Receipt, PiggyBank, GraduationCap, Menu, LogOut, Settings, Bell, PlusCircle, Filter, Search, X, Calendar as CalendarIcon } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { AIAssistant } from './components/AIAssistant';
 import { KidsMode } from './components/KidsMode';
 import { AddTransactionModal } from './components/AddTransactionModal';
-import { Transaction, Goal } from './types';
+import { Transaction, Goal, CategoryType } from './types';
 
 // Mock Initial Data (Translated)
 const INITIAL_TRANSACTIONS: Transaction[] = [
@@ -37,9 +37,35 @@ function App() {
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
   const [goals, setGoals] = useState<Goal[]>(INITIAL_GOALS);
 
+  // Filter State
+  const [filterDate, setFilterDate] = useState(''); // YYYY-MM
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterType, setFilterType] = useState<CategoryType | 'all'>('all');
+
   const handleAddTransaction = (newTx: Transaction) => {
     setTransactions(prev => [newTx, ...prev]);
     setIsModalOpen(false);
+  };
+
+  // Filter Logic
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const matchesDate = filterDate ? t.date.startsWith(filterDate) : true;
+      const matchesCategory = filterCategory ? t.category === filterCategory : true;
+      const matchesType = filterType !== 'all' ? t.type === filterType : true;
+      return matchesDate && matchesCategory && matchesType;
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [transactions, filterDate, filterCategory, filterType]);
+
+  // Derived lists for dropdowns
+  const uniqueCategories = useMemo(() => {
+    return Array.from(new Set(transactions.map(t => t.category))).sort();
+  }, [transactions]);
+
+  const resetFilters = () => {
+    setFilterDate('');
+    setFilterCategory('');
+    setFilterType('all');
   };
 
   const getTitle = (view: View) => {
@@ -164,51 +190,131 @@ function App() {
           )}
 
           {currentView === 'transactions' && (
-            <div className="p-8 max-w-5xl mx-auto">
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                   <h3 className="font-bold text-lg text-slate-800">Transacciones Recientes</h3>
-                   <button 
-                      onClick={() => setIsModalOpen(true)}
-                      className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                   >
-                     <PlusCircle className="w-4 h-4" /> Agregar Nueva
-                   </button>
-                </div>
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
-                    <tr>
-                      <th className="px-6 py-4">Fecha</th>
-                      <th className="px-6 py-4">Descripción</th>
-                      <th className="px-6 py-4">Categoría</th>
-                      <th className="px-6 py-4">Usuario</th>
-                      <th className="px-6 py-4 text-right">Monto</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {transactions.map((t) => (
-                      <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 text-sm text-slate-600">{new Date(t.date).toLocaleDateString('es-ES')}</td>
-                        <td className="px-6 py-4 font-medium text-slate-800">{t.description}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                            ${t.type === 'income' ? 'bg-emerald-100 text-emerald-800' : ''}
-                            ${t.type === 'fixed' ? 'bg-slate-100 text-slate-800' : ''}
-                            ${t.type === 'variable' ? 'bg-blue-100 text-blue-800' : ''}
-                            ${t.type === 'discretionary' ? 'bg-amber-100 text-amber-800' : ''}
-                            ${t.type === 'savings' ? 'bg-purple-100 text-purple-800' : ''}
-                          `}>
-                            {t.category}
-                          </span>
-                        </td>
-                         <td className="px-6 py-4 text-sm text-slate-500">{t.user}</td>
-                        <td className={`px-6 py-4 text-right font-semibold ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-700'}`}>
-                          {t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
-                        </td>
-                      </tr>
+            <div className="p-8 max-w-5xl mx-auto space-y-6">
+              
+              {/* Filter Bar */}
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-center justify-between">
+                <div className="flex flex-wrap gap-3 items-center flex-1">
+                  <div className="flex items-center gap-2 text-slate-500 font-medium mr-2">
+                    <Filter className="w-4 h-4" /> Filtros:
+                  </div>
+                  
+                  {/* Month Filter */}
+                  <div className="relative">
+                    <input 
+                      type="month" 
+                      value={filterDate}
+                      onChange={(e) => setFilterDate(e.target.value)}
+                      className="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                    <CalendarIcon className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                  </div>
+
+                  {/* Type Filter */}
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value as CategoryType | 'all')}
+                    className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="all">Todos los Tipos</option>
+                    <option value="fixed">Gastos Fijos</option>
+                    <option value="variable">Gastos Variables</option>
+                    <option value="discretionary">Gastos Ocio</option>
+                    <option value="income">Ingresos</option>
+                    <option value="savings">Ahorros</option>
+                  </select>
+
+                  {/* Category Filter */}
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="">Todas las Categorías</option>
+                    {uniqueCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
                     ))}
-                  </tbody>
-                </table>
+                  </select>
+
+                  {/* Reset Button */}
+                  {(filterDate || filterCategory || filterType !== 'all') && (
+                    <button 
+                      onClick={resetFilters}
+                      className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 font-medium px-2"
+                    >
+                      <X className="w-3 h-3" /> Limpiar
+                    </button>
+                  )}
+                </div>
+
+                <button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm"
+                >
+                  <PlusCircle className="w-4 h-4" /> Nueva Transacción
+                </button>
+              </div>
+
+              {/* Table */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                   <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                     <Receipt className="w-4 h-4 text-slate-500" />
+                     Historial
+                     <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full">
+                       {filteredTransactions.length}
+                     </span>
+                   </h3>
+                </div>
+                {filteredTransactions.length > 0 ? (
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                      <tr>
+                        <th className="px-6 py-4">Fecha</th>
+                        <th className="px-6 py-4">Descripción</th>
+                        <th className="px-6 py-4">Categoría</th>
+                        <th className="px-6 py-4">Tipo</th>
+                        <th className="px-6 py-4">Usuario</th>
+                        <th className="px-6 py-4 text-right">Monto</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredTransactions.map((t) => (
+                        <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 text-sm text-slate-600 font-medium">
+                            {new Date(t.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-6 py-4 font-medium text-slate-800">{t.description}</td>
+                          <td className="px-6 py-4 text-sm text-slate-600">{t.category}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                              ${t.type === 'income' ? 'bg-emerald-100 text-emerald-800' : ''}
+                              ${t.type === 'fixed' ? 'bg-slate-100 text-slate-800' : ''}
+                              ${t.type === 'variable' ? 'bg-blue-100 text-blue-800' : ''}
+                              ${t.type === 'discretionary' ? 'bg-amber-100 text-amber-800' : ''}
+                              ${t.type === 'savings' ? 'bg-purple-100 text-purple-800' : ''}
+                            `}>
+                              {t.type === 'fixed' ? 'Fijo' : 
+                               t.type === 'variable' ? 'Variable' : 
+                               t.type === 'discretionary' ? 'Ocio' : 
+                               t.type === 'income' ? 'Ingreso' : 'Ahorro'}
+                            </span>
+                          </td>
+                           <td className="px-6 py-4 text-sm text-slate-500">{t.user}</td>
+                          <td className={`px-6 py-4 text-right font-semibold ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-700'}`}>
+                            {t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="p-12 text-center text-slate-400 flex flex-col items-center">
+                    <Search className="w-12 h-12 mb-3 opacity-20" />
+                    <p>No se encontraron transacciones con estos filtros.</p>
+                    <button onClick={resetFilters} className="mt-2 text-indigo-600 text-sm hover:underline">Limpiar filtros</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
