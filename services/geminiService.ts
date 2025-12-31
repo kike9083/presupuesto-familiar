@@ -1,23 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 import { Transaction, Goal } from "../types";
 
-const createClient = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    console.warn("API_KEY not found in environment variables");
-    return null;
-  }
-  return new GoogleGenAI({ apiKey });
-};
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateFinancialAdvice = async (
   query: string,
   transactions: Transaction[],
   goals: Goal[]
 ): Promise<string> => {
-  const ai = createClient();
-  if (!ai) return "Servicio de IA no disponible: Falta la API Key.";
-
   // Prepare context
   const financialContext = `
     Datos actuales del usuario:
@@ -56,9 +46,6 @@ export const generateFinancialAdvice = async (
 };
 
 export const autoCategorizeTransaction = async (description: string): Promise<string> => {
-    const ai = createClient();
-    if (!ai) return "Sin Categoría";
-
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
