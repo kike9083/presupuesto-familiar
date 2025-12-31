@@ -32,7 +32,7 @@ function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // Data State
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
   const [goals, setGoals] = useState<Goal[]>(INITIAL_GOALS);
@@ -69,7 +69,7 @@ function App() {
   };
 
   const getTitle = (view: View) => {
-    switch(view) {
+    switch (view) {
       case 'dashboard': return 'Panel Principal';
       case 'transactions': return 'Transacciones';
       case 'goals': return 'Metas Financieras';
@@ -81,7 +81,7 @@ function App() {
   if (currentView === 'kids') {
     return (
       <>
-        <button 
+        <button
           onClick={() => setCurrentView('dashboard')}
           className="fixed top-4 right-4 z-50 bg-white/50 backdrop-blur-md p-2 rounded-full hover:bg-white transition-colors"
         >
@@ -94,12 +94,11 @@ function App() {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      
+
       {/* Sidebar */}
-      <aside 
-        className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
-        } bg-slate-900 text-white transition-all duration-300 flex flex-col z-20`}
+      <aside
+        className={`${sidebarOpen ? 'w-64' : 'w-20'
+          } bg-slate-900 text-white transition-all duration-300 flex flex-col z-20`}
       >
         <div className="h-16 flex items-center justify-center border-b border-slate-800">
           <div className="flex items-center space-x-2">
@@ -111,38 +110,38 @@ function App() {
         </div>
 
         <nav className="flex-1 py-6 space-y-2 px-3">
-          <SidebarItem 
-            icon={<LayoutDashboard />} 
-            label="Panel Principal" 
-            active={currentView === 'dashboard'} 
+          <SidebarItem
+            icon={<LayoutDashboard />}
+            label="Panel Principal"
+            active={currentView === 'dashboard'}
             onClick={() => setCurrentView('dashboard')}
             expanded={sidebarOpen}
           />
-          <SidebarItem 
-            icon={<Receipt />} 
-            label="Transacciones" 
-            active={currentView === 'transactions'} 
+          <SidebarItem
+            icon={<Receipt />}
+            label="Transacciones"
+            active={currentView === 'transactions'}
             onClick={() => setCurrentView('transactions')}
             expanded={sidebarOpen}
           />
-          <SidebarItem 
-            icon={<PiggyBank />} 
-            label="Metas" 
-            active={currentView === 'goals'} 
+          <SidebarItem
+            icon={<PiggyBank />}
+            label="Metas"
+            active={currentView === 'goals'}
             onClick={() => setCurrentView('goals')}
             expanded={sidebarOpen}
           />
-          
+
           <div className="pt-8 pb-2">
             <div className={`px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
               Familia
             </div>
           </div>
-          
-          <SidebarItem 
-            icon={<GraduationCap />} 
-            label="Modo Niños" 
-            active={currentView === 'kids'} 
+
+          <SidebarItem
+            icon={<GraduationCap />}
+            label="Modo Niños"
+            active={(currentView as any) === 'kids'}
             onClick={() => setCurrentView('kids')}
             expanded={sidebarOpen}
             color="text-yellow-400 hover:text-yellow-300"
@@ -150,7 +149,7 @@ function App() {
         </nav>
 
         <div className="p-4 border-t border-slate-800">
-          <button 
+          <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="w-full flex items-center justify-center p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400"
           >
@@ -167,7 +166,7 @@ function App() {
             {getTitle(currentView)}
           </h2>
           <div className="flex items-center space-x-4">
-             <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
+            <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
             </button>
@@ -191,18 +190,18 @@ function App() {
 
           {currentView === 'transactions' && (
             <div className="p-8 max-w-5xl mx-auto space-y-6">
-              
+
               {/* Filter Bar */}
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-center justify-between">
                 <div className="flex flex-wrap gap-3 items-center flex-1">
                   <div className="flex items-center gap-2 text-slate-500 font-medium mr-2">
                     <Filter className="w-4 h-4" /> Filtros:
                   </div>
-                  
+
                   {/* Month Filter */}
                   <div className="relative">
-                    <input 
-                      type="month" 
+                    <input
+                      type="month"
                       value={filterDate}
                       onChange={(e) => setFilterDate(e.target.value)}
                       className="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -238,7 +237,7 @@ function App() {
 
                   {/* Reset Button */}
                   {(filterDate || filterCategory || filterType !== 'all') && (
-                    <button 
+                    <button
                       onClick={resetFilters}
                       className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 font-medium px-2"
                     >
@@ -247,7 +246,7 @@ function App() {
                   )}
                 </div>
 
-                <button 
+                <button
                   onClick={() => setIsModalOpen(true)}
                   className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm"
                 >
@@ -258,13 +257,13 @@ function App() {
               {/* Table */}
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                   <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                     <Receipt className="w-4 h-4 text-slate-500" />
-                     Historial
-                     <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full">
-                       {filteredTransactions.length}
-                     </span>
-                   </h3>
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <Receipt className="w-4 h-4 text-slate-500" />
+                    Historial
+                    <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full">
+                      {filteredTransactions.length}
+                    </span>
+                  </h3>
                 </div>
                 {filteredTransactions.length > 0 ? (
                   <table className="w-full text-left">
@@ -294,13 +293,13 @@ function App() {
                               ${t.type === 'discretionary' ? 'bg-amber-100 text-amber-800' : ''}
                               ${t.type === 'savings' ? 'bg-purple-100 text-purple-800' : ''}
                             `}>
-                              {t.type === 'fixed' ? 'Fijo' : 
-                               t.type === 'variable' ? 'Variable' : 
-                               t.type === 'discretionary' ? 'Ocio' : 
-                               t.type === 'income' ? 'Ingreso' : 'Ahorro'}
+                              {t.type === 'fixed' ? 'Fijo' :
+                                t.type === 'variable' ? 'Variable' :
+                                  t.type === 'discretionary' ? 'Ocio' :
+                                    t.type === 'income' ? 'Ingreso' : 'Ahorro'}
                             </span>
                           </td>
-                           <td className="px-6 py-4 text-sm text-slate-500">{t.user}</td>
+                          <td className="px-6 py-4 text-sm text-slate-500">{t.user}</td>
                           <td className={`px-6 py-4 text-right font-semibold ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-700'}`}>
                             {t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
                           </td>
@@ -335,9 +334,9 @@ function App() {
                   return (
                     <div key={goal.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                         <span className="text-9xl grayscale">{goal.icon}</span>
+                        <span className="text-9xl grayscale">{goal.icon}</span>
                       </div>
-                      
+
                       <div className="relative z-10">
                         <div className="flex justify-between items-start mb-4">
                           <div className="bg-indigo-50 w-16 h-16 rounded-2xl flex items-center justify-center text-4xl shadow-sm">
@@ -352,16 +351,16 @@ function App() {
                         <p className="text-sm text-slate-500 mb-6">Meta: {new Date(goal.deadline).toLocaleDateString('es-ES')}</p>
 
                         <div className="space-y-2">
-                           <div className="flex justify-between text-sm font-medium">
-                              <span className="text-slate-600">${goal.currentAmount.toLocaleString()}</span>
-                              <span className="text-slate-400">de ${goal.targetAmount.toLocaleString()}</span>
-                           </div>
-                           <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full transition-all duration-1000 ${percent >= 100 ? 'bg-green-500' : 'bg-indigo-600'}`}
-                                style={{ width: `${percent}%` }}
-                              ></div>
-                           </div>
+                          <div className="flex justify-between text-sm font-medium">
+                            <span className="text-slate-600">${goal.currentAmount.toLocaleString()}</span>
+                            <span className="text-slate-400">de ${goal.targetAmount.toLocaleString()}</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-1000 ${percent >= 100 ? 'bg-green-500' : 'bg-indigo-600'}`}
+                              style={{ width: `${percent}%` }}
+                            ></div>
+                          </div>
                         </div>
 
                         <button className="mt-6 w-full py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all font-medium">
@@ -375,12 +374,12 @@ function App() {
             </div>
           )}
         </div>
-        
+
         {/* Floating AI */}
         <AIAssistant transactions={transactions} goals={goals} />
-        <AddTransactionModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
+        <AddTransactionModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
           onSave={handleAddTransaction}
         />
       </main>
