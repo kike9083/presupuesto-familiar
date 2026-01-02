@@ -50,6 +50,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ transactions, goals })
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-50 flex items-center justify-center group"
+          title="Abrir chat con IA"
+          aria-label="Abrir chat con IA"
         >
           <Sparkles className="w-6 h-6 animate-pulse" />
           <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 whitespace-nowrap">
@@ -70,7 +72,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ transactions, goals })
                 <p className="text-xs text-indigo-200">Potenciado por Gemini 2.0 Flash</p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="hover:bg-indigo-500 p-1 rounded-full transition-colors">
+            <button
+              onClick={() => setIsOpen(false)}
+              className="hover:bg-indigo-500 p-1 rounded-full transition-colors"
+              title="Cerrar chat"
+              aria-label="Cerrar chat"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -84,8 +91,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ transactions, goals })
               >
                 <div
                   className={`max-w-[80%] rounded-2xl p-3 text-sm ${msg.role === 'user'
-                      ? 'bg-indigo-600 text-white rounded-br-none'
-                      : 'bg-white text-slate-700 border border-slate-200 rounded-bl-none shadow-sm'
+                    ? 'bg-indigo-600 text-white rounded-br-none'
+                    : 'bg-white text-slate-700 border border-slate-200 rounded-bl-none shadow-sm'
                     }`}
                 >
                   {msg.text}
@@ -95,9 +102,9 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ transactions, goals })
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-none p-3 shadow-sm flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce-custom-0" />
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce-custom-1" />
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce-custom-2" />
                 </div>
               </div>
             )}
@@ -119,6 +126,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ transactions, goals })
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
                 className="ml-2 text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                title="Enviar mensaje"
+                aria-label="Enviar mensaje"
               >
                 <Send className="w-5 h-5" />
               </button>

@@ -1,50 +1,97 @@
-import React, { useState, useMemo } from 'react';
-import { LayoutDashboard, Receipt, PiggyBank, GraduationCap, Menu, LogOut, Settings, Bell, PlusCircle, Filter, Search, X, Calendar as CalendarIcon } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { LayoutDashboard, Receipt, PiggyBank, GraduationCap, Menu, LogOut, Settings, Bell, PlusCircle, Filter, Search, X, Calendar as CalendarIcon, Pencil, Trash2 } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { AIAssistant } from './components/AIAssistant';
 import { KidsMode } from './components/KidsMode';
 import { AddTransactionModal } from './components/AddTransactionModal';
+import { AddGoalModal } from './components/AddGoalModal';
 import { Transaction, Goal, CategoryType } from './types';
 
 // Mock Initial Data (Translated)
-const INITIAL_TRANSACTIONS: Transaction[] = [
-  { id: '1', date: '2023-10-01', description: 'Salario', amount: 5000, category: 'Ingresos', type: 'income', user: 'Papá' },
-  { id: '2', date: '2023-10-02', description: 'Hipoteca', amount: 1200, category: 'Vivienda', type: 'fixed', user: 'Conjunto' },
-  { id: '3', date: '2023-10-05', description: 'Supermercado', amount: 150, category: 'Comestibles', type: 'variable', user: 'Mamá' },
-  { id: '4', date: '2023-10-06', description: 'Suscripción Netflix', amount: 15, category: 'Entretenimiento', type: 'discretionary', user: 'Conjunto' },
-  { id: '5', date: '2023-10-08', description: 'Factura Electricidad', amount: 120, category: 'Servicios', type: 'fixed', user: 'Conjunto' },
-  { id: '6', date: '2023-10-10', description: 'Fondo de Emergencia', amount: 500, category: 'Ahorro', type: 'savings', user: 'Papá' },
-  { id: '7', date: '2023-10-12', description: 'Cena Familiar', amount: 85, category: 'Restaurante', type: 'discretionary', user: 'Conjunto' },
-  { id: '8', date: '2023-10-15', description: 'Seguro de Auto', amount: 100, category: 'Seguros', type: 'fixed', user: 'Mamá' },
-  { id: '9', date: '2023-10-18', description: 'Gasolinera', amount: 45, category: 'Transporte', type: 'variable', user: 'Mamá' },
-  { id: '10', date: '2023-10-20', description: 'Cine', amount: 40, category: 'Entretenimiento', type: 'discretionary', user: 'Papá' },
-];
+const INITIAL_TRANSACTIONS: Transaction[] = [];
 
-const INITIAL_GOALS: Goal[] = [
-  { id: '1', name: 'Vacaciones de Verano', targetAmount: 3000, currentAmount: 1200, deadline: '2024-06-01', icon: '🏖️' },
-  { id: '2', name: 'Nueva Laptop', targetAmount: 1500, currentAmount: 800, deadline: '2023-12-25', icon: '💻' },
-  { id: '3', name: 'Fondo de Emergencia', targetAmount: 20000, currentAmount: 12400, deadline: '2025-01-01', icon: '🚑' },
-];
+const INITIAL_GOALS: Goal[] = [];
 
 type View = 'dashboard' | 'transactions' | 'kids' | 'goals';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  /* -------------------------------------------------------------
+   * STATE
+   * ------------------------------------------------------------- */
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    try {
+      const saved = localStorage.getItem('presupuesto_transactions_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
 
-  // Data State
-  const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
-  const [goals, setGoals] = useState<Goal[]>(INITIAL_GOALS);
+  const [goals, setGoals] = useState<Goal[]>(() => {
+    try {
+      const saved = localStorage.getItem('presupuesto_goals_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+
+  // Persistence
+  useEffect(() => {
+    console.log('Guardando transacciones:', transactions);
+    localStorage.setItem('presupuesto_transactions_v1', JSON.stringify(transactions));
+  }, [transactions]);
+
+  useEffect(() => {
+    console.log('Guardando metas:', goals);
+    localStorage.setItem('presupuesto_goals_v1', JSON.stringify(goals));
+  }, [goals]);
 
   // Filter State
-  const [filterDate, setFilterDate] = useState(''); // YYYY-MM
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
+  const [filterQuincena, setFilterQuincena] = useState<'all' | '1' | '2'>(new Date().getDate() <= 15 ? '1' : '2');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterType, setFilterType] = useState<CategoryType | 'all'>('all');
 
-  const handleAddTransaction = (newTx: Transaction) => {
-    setTransactions(prev => [newTx, ...prev]);
+  /* -------------------------------------------------------------
+   * HANDLERS
+   * ------------------------------------------------------------- */
+  const handleSaveTransaction = (transaction: Transaction) => {
+    if (editingTransaction) {
+      // Edit mode
+      setTransactions(prev => prev.map(t => t.id === transaction.id ? transaction : t));
+      setEditingTransaction(null);
+    } else {
+      // Add mode
+      setTransactions(prev => [transaction, ...prev]);
+    }
     setIsModalOpen(false);
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    if (window.confirm("¿Seguro que quieres eliminar esta transacción?")) {
+      setTransactions(prev => prev.filter(t => t.id !== id));
+    }
+  };
+
+  const handleSaveGoal = (goal: Goal) => {
+    setGoals(prev => {
+      const exists = prev.find(g => g.id === goal.id);
+      if (exists) {
+        return prev.map(g => g.id === goal.id ? goal : g);
+      }
+      return [...prev, goal];
+    });
+    setIsGoalModalOpen(false);
+    setEditingGoal(null);
   };
 
   // Filter Logic
@@ -53,9 +100,20 @@ function App() {
       const matchesDate = filterDate ? t.date.startsWith(filterDate) : true;
       const matchesCategory = filterCategory ? t.category === filterCategory : true;
       const matchesType = filterType !== 'all' ? t.type === filterType : true;
-      return matchesDate && matchesCategory && matchesType;
+
+      let matchesQuincena = true;
+      if (filterQuincena !== 'all') {
+        const day = parseInt(t.date.split('-')[2]);
+        if (filterQuincena === '1') {
+          matchesQuincena = day <= 15;
+        } else {
+          matchesQuincena = day > 15;
+        }
+      }
+
+      return matchesDate && matchesCategory && matchesType && matchesQuincena;
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions, filterDate, filterCategory, filterType]);
+  }, [transactions, filterDate, filterCategory, filterType, filterQuincena]);
 
   // Derived lists for dropdowns
   const uniqueCategories = useMemo(() => {
@@ -63,7 +121,8 @@ function App() {
   }, [transactions]);
 
   const resetFilters = () => {
-    setFilterDate('');
+    setFilterDate(new Date().toISOString().slice(0, 7));
+    setFilterQuincena(new Date().getDate() <= 15 ? '1' : '2');
     setFilterCategory('');
     setFilterType('all');
   };
@@ -84,6 +143,8 @@ function App() {
         <button
           onClick={() => setCurrentView('dashboard')}
           className="fixed top-4 right-4 z-50 bg-white/50 backdrop-blur-md p-2 rounded-full hover:bg-white transition-colors"
+          title="Salir del Modo Niños"
+          aria-label="Salir del Modo Niños"
         >
           <LogOut className="w-6 h-6 text-slate-700" />
         </button>
@@ -98,7 +159,7 @@ function App() {
       {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-64' : 'w-20'
-          } bg-slate-900 text-white transition-all duration-300 flex flex-col z-20`}
+          } bg - slate - 900 text - white transition - all duration - 300 flex flex - col z - 20`}
       >
         <div className="h-16 flex items-center justify-center border-b border-slate-800">
           <div className="flex items-center space-x-2">
@@ -133,7 +194,7 @@ function App() {
           />
 
           <div className="pt-8 pb-2">
-            <div className={`px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
+            <div className={`px - 4 text - xs font - semibold text - slate - 500 uppercase tracking - wider ${!sidebarOpen && 'hidden'} `}>
               Familia
             </div>
           </div>
@@ -152,6 +213,8 @@ function App() {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="w-full flex items-center justify-center p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400"
+            title={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-label={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -166,7 +229,11 @@ function App() {
             {getTitle(currentView)}
           </h2>
           <div className="flex items-center space-x-4">
-            <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
+            <button
+              className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
+              title="Notificaciones"
+              aria-label="Notificaciones"
+            >
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
             </button>
@@ -185,7 +252,35 @@ function App() {
         {/* Scrollable View Area */}
         <div className="flex-1 overflow-y-auto">
           {currentView === 'dashboard' && (
-            <Dashboard transactions={transactions} goals={goals} />
+            <div className="space-y-4">
+              <div className="px-6 pt-4 flex items-center gap-4 bg-white border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2 text-slate-500 font-medium text-sm">
+                  <Filter className="w-4 h-4" /> Periodo:
+                </div>
+                <input
+                  id="period-selector-dashboard"
+                  type="month"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none"
+                  title="Seleccionar Mes"
+                  aria-label="Seleccionar Mes"
+                />
+                <select
+                  id="quincena-selector-dashboard"
+                  value={filterQuincena}
+                  onChange={(e) => setFilterQuincena(e.target.value as any)}
+                  className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none"
+                  title="Seleccionar Quincena"
+                  aria-label="Seleccionar Quincena"
+                >
+                  <option value="all">Mes Completo</option>
+                  <option value="1">1ra Quincena (1-15)</option>
+                  <option value="2">2da Quincena (16+)</option>
+                </select>
+              </div>
+              <Dashboard transactions={filteredTransactions} goals={goals} />
+            </div>
           )}
 
           {currentView === 'transactions' && (
@@ -198,15 +293,32 @@ function App() {
                     <Filter className="w-4 h-4" /> Filtros:
                   </div>
 
-                  {/* Month Filter */}
-                  <div className="relative">
-                    <input
-                      type="month"
-                      value={filterDate}
-                      onChange={(e) => setFilterDate(e.target.value)}
-                      className="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                    <CalendarIcon className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                  {/* Month & Quincena Filter */}
+                  <div className="flex gap-2 items-center">
+                    <div className="relative">
+                      <input
+                        id="period-selector-transactions"
+                        type="month"
+                        value={filterDate}
+                        onChange={(e) => setFilterDate(e.target.value)}
+                        className="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                        title="Seleccionar Mes"
+                        aria-label="Seleccionar Mes"
+                      />
+                      <CalendarIcon className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                    </div>
+                    <select
+                      id="quincena-selector-transactions"
+                      value={filterQuincena}
+                      onChange={(e) => setFilterQuincena(e.target.value as any)}
+                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                      title="Seleccionar Quincena"
+                      aria-label="Seleccionar Quincena"
+                    >
+                      <option value="all">Mes Completo</option>
+                      <option value="1">1ra Quincena</option>
+                      <option value="2">2da Quincena</option>
+                    </select>
                   </div>
 
                   {/* Type Filter */}
@@ -236,7 +348,7 @@ function App() {
                   </select>
 
                   {/* Reset Button */}
-                  {(filterDate || filterCategory || filterType !== 'all') && (
+                  {(filterDate !== new Date().toISOString().slice(0, 7) || filterQuincena !== 'all' || filterCategory || filterType !== 'all') && (
                     <button
                       onClick={resetFilters}
                       className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 font-medium px-2"
@@ -247,7 +359,10 @@ function App() {
                 </div>
 
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => {
+                    setEditingTransaction(null);
+                    setIsModalOpen(true);
+                  }}
                   className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm"
                 >
                   <PlusCircle className="w-4 h-4" /> Nueva Transacción
@@ -275,6 +390,7 @@ function App() {
                         <th className="px-6 py-4">Tipo</th>
                         <th className="px-6 py-4">Usuario</th>
                         <th className="px-6 py-4 text-right">Monto</th>
+                        <th className="px-6 py-4 text-center">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -286,13 +402,13 @@ function App() {
                           <td className="px-6 py-4 font-medium text-slate-800">{t.description}</td>
                           <td className="px-6 py-4 text-sm text-slate-600">{t.category}</td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                            <span className={`inline - flex items - center px - 2.5 py - 0.5 rounded - full text - xs font - medium capitalize
                               ${t.type === 'income' ? 'bg-emerald-100 text-emerald-800' : ''}
                               ${t.type === 'fixed' ? 'bg-slate-100 text-slate-800' : ''}
                               ${t.type === 'variable' ? 'bg-blue-100 text-blue-800' : ''}
                               ${t.type === 'discretionary' ? 'bg-amber-100 text-amber-800' : ''}
                               ${t.type === 'savings' ? 'bg-purple-100 text-purple-800' : ''}
-                            `}>
+`}>
                               {t.type === 'fixed' ? 'Fijo' :
                                 t.type === 'variable' ? 'Variable' :
                                   t.type === 'discretionary' ? 'Ocio' :
@@ -300,8 +416,26 @@ function App() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-slate-500">{t.user}</td>
-                          <td className={`px-6 py-4 text-right font-semibold ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-700'}`}>
+                          <td className={`px - 6 py - 4 text - right font - semibold ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-700'} `}>
                             {t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 text-center space-x-2">
+                            <button
+                              onClick={() => handleEditTransaction(t)}
+                              className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                              title="Editar transacción"
+                              aria-label="Editar"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTransaction(t.id)}
+                              className="text-red-500 hover:text-red-700 transition-colors"
+                              title="Eliminar transacción"
+                              aria-label="Eliminar"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -322,7 +456,13 @@ function App() {
             <div className="p-8 max-w-6xl mx-auto space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-2xl font-bold text-slate-800">Tus Metas de Ahorro</h3>
-                <button className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                <button
+                  onClick={() => {
+                    setEditingGoal(null);
+                    setIsGoalModalOpen(true);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
                   <PlusCircle className="w-5 h-5" />
                   <span>Nueva Meta</span>
                 </button>
@@ -342,7 +482,7 @@ function App() {
                           <div className="bg-indigo-50 w-16 h-16 rounded-2xl flex items-center justify-center text-4xl shadow-sm">
                             {goal.icon}
                           </div>
-                          <div className={`px-3 py-1 rounded-full text-sm font-bold ${percent >= 100 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                          <div className={`px - 3 py - 1 rounded - full text - sm font - bold ${percent >= 100 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'} `}>
                             {percent}%
                           </div>
                         </div>
@@ -357,14 +497,20 @@ function App() {
                           </div>
                           <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all duration-1000 ${percent >= 100 ? 'bg-green-500' : 'bg-indigo-600'}`}
-                              style={{ width: `${percent}%` }}
+                              className={`h - full rounded - full transition - all duration - 1000 ${percent >= 100 ? 'bg-green-500' : 'bg-indigo-600'} `}
+                              style={{ width: `${percent}% ` }}
                             ></div>
                           </div>
                         </div>
 
-                        <button className="mt-6 w-full py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all font-medium">
-                          Añadir Fondos
+                        <button
+                          onClick={() => {
+                            setEditingGoal(goal);
+                            setIsGoalModalOpen(true);
+                          }}
+                          className="mt-6 w-full py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all font-medium"
+                        >
+                          Editar Meta / Añadir Fondos
                         </button>
                       </div>
                     </div>
@@ -377,10 +523,24 @@ function App() {
 
         {/* Floating AI */}
         <AIAssistant transactions={transactions} goals={goals} />
+        {/* Modal Transaction */}
         <AddTransactionModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleAddTransaction}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingTransaction(null); // Reset editing transaction on close
+          }}
+          onSave={handleSaveTransaction}
+          initialData={editingTransaction}
+        />
+        <AddGoalModal
+          isOpen={isGoalModalOpen}
+          onClose={() => {
+            setIsGoalModalOpen(false);
+            setEditingGoal(null);
+          }}
+          onSave={handleSaveGoal}
+          editingGoal={editingGoal}
         />
       </main>
     </div>
@@ -400,15 +560,15 @@ interface SidebarItemProps {
 const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick, expanded, color }) => (
   <button
     onClick={onClick}
-    className={`flex items-center w-full p-3 rounded-lg transition-all duration-200 group
+    className={`flex items - center w - full p - 3 rounded - lg transition - all duration - 200 group
       ${active ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}
       ${color && !active ? color : ''}
-    `}
+`}
   >
-    <div className={`${active ? 'text-white' : ''} ${!active && color ? color : ''}`}>
+    <div className={`${active ? 'text-white' : ''} ${!active && color ? color : ''} `}>
       {icon}
     </div>
-    <span className={`ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ${expanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
+    <span className={`ml - 3 font - medium whitespace - nowrap overflow - hidden transition - all duration - 300 ${expanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'} `}>
       {label}
     </span>
     {!expanded && active && (

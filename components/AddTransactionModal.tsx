@@ -6,15 +6,38 @@ interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (transaction: Transaction) => void;
+  initialData?: Transaction | null;
 }
 
-export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onSave }) => {
+export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onSave, initialData }) => {
   const [type, setType] = useState<CategoryType>('variable');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [user, setUser] = useState('Conjunto');
+
+  const resetForm = () => {
+    setAmount('');
+    setDescription('');
+    setCategory('');
+    setType('variable');
+    setDate(new Date().toISOString().split('T')[0]);
+    setUser('Conjunto');
+  };
+
+  React.useEffect(() => {
+    if (initialData) {
+      setType(initialData.type);
+      setAmount(initialData.amount.toString());
+      setDescription(initialData.description);
+      setCategory(initialData.category);
+      setDate(initialData.date);
+      setUser(initialData.user);
+    } else {
+      resetForm();
+    }
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -23,7 +46,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
     if (!amount || !description) return;
 
     const newTx: Transaction = {
-      id: Date.now().toString(),
+      id: initialData ? initialData.id : Date.now().toString(),
       date,
       description,
       amount: parseFloat(amount),
@@ -35,14 +58,6 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
     resetForm();
   };
 
-  const resetForm = () => {
-    setAmount('');
-    setDescription('');
-    setCategory('');
-    setType('variable');
-    setDate(new Date().toISOString().split('T')[0]);
-  };
-
   const expenseTypes = [
     { id: 'fixed', label: 'Fijo', desc: 'Renta, Servicios', color: 'bg-slate-100 text-slate-700 border-slate-200' },
     { id: 'variable', label: 'Variable', desc: 'Comida, Gas', color: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -52,7 +67,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
@@ -60,14 +75,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
       {/* Modal */}
       <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="text-lg font-bold text-slate-800">Registrar Movimiento</h3>
+          <h3 className="text-lg font-bold text-slate-800">{initialData ? 'Editar Transacción' : 'Registrar Movimiento'}</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          
+
           {/* Type Selector */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
@@ -79,11 +94,10 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
                   key={t.id}
                   type="button"
                   onClick={() => setType(t.id as CategoryType)}
-                  className={`p-3 rounded-xl border-2 text-left transition-all ${
-                    type === t.id 
-                      ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50' 
-                      : 'border-slate-100 hover:border-slate-200 bg-white'
-                  }`}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${type === t.id
+                    ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50'
+                    : 'border-slate-100 hover:border-slate-200 bg-white'
+                    }`}
                 >
                   <div className={`font-bold text-sm ${type === t.id ? 'text-indigo-700' : 'text-slate-700'}`}>
                     {t.label}
@@ -93,24 +107,22 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
               ))}
             </div>
             <div className="flex gap-3 mt-2">
-               <button
-                  type="button"
-                  onClick={() => setType('income')}
-                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
-                    type === 'income' ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              <button
+                type="button"
+                onClick={() => setType('income')}
+                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${type === 'income' ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
-                >
-                  + Ingreso
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setType('savings')}
-                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
-                    type === 'savings' ? 'bg-purple-100 border-purple-300 text-purple-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              >
+                + Ingreso
+              </button>
+              <button
+                type="button"
+                onClick={() => setType('savings')}
+                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${type === 'savings' ? 'bg-purple-100 border-purple-300 text-purple-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
-                >
-                  Ahorro
-                </button>
+              >
+                Ahorro
+              </button>
             </div>
           </div>
 
@@ -174,6 +186,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
               placeholder="Ej: Alimentación"
             />
             <datalist id="categories">
+              <option value="Salario" />
               <option value="Vivienda" />
               <option value="Alimentación" />
               <option value="Transporte" />
@@ -189,7 +202,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
             type="submit"
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 transition-all transform active:scale-95 flex items-center justify-center gap-2"
           >
-            <Check className="w-5 h-5" /> Guardar Transacción
+            <Check className="w-5 h-5" /> {initialData ? 'Actualizar Transacción' : 'Guardar Transacción'}
           </button>
         </form>
       </div>

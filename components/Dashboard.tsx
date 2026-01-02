@@ -12,7 +12,7 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'];
 const CATEGORY_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4'];
 
 export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => {
-  
+
   // Calculate Totals
   const income = transactions
     .filter(t => t.type === 'income')
@@ -30,10 +30,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
     const variable = transactions.filter(t => t.type === 'variable').reduce((a, c) => a + c.amount, 0); // "Needs" can overlap
     const wants = transactions.filter(t => t.type === 'discretionary').reduce((a, c) => a + c.amount, 0);
     const savings = transactions.filter(t => t.type === 'savings').reduce((a, c) => a + c.amount, 0);
-    
+
     // Combining Fixed + Variable as "Needs" for simple 50/30/20 mapping in this context
-    const needsTotal = fixed + variable; 
-    
+    const needsTotal = fixed + variable;
+
     return [
       { name: 'Necesidades (50%)', value: needsTotal, color: '#6366f1', target: income * 0.5 },
       { name: 'Deseos (30%)', value: wants, color: '#f59e0b', target: income * 0.3 },
@@ -45,18 +45,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
   const trendData = useMemo(() => {
     const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const map = new Map();
-    
+
     sorted.forEach(t => {
-       const date = new Date(t.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-       if (!map.has(date)) {
-         map.set(date, { name: date, ingresos: 0, gastos: 0 });
-       }
-       const entry = map.get(date);
-       if (t.type === 'income') {
-         entry.ingresos += t.amount;
-       } else if (t.type !== 'savings') {
-          entry.gastos += t.amount;
-       }
+      const date = new Date(t.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+      if (!map.has(date)) {
+        map.set(date, { name: date, ingresos: 0, gastos: 0 });
+      }
+      const entry = map.get(date);
+      if (t.type === 'income') {
+        entry.ingresos += t.amount;
+      } else if (t.type !== 'savings') {
+        entry.gastos += t.amount;
+      }
     });
     return Array.from(map.values());
   }, [transactions]);
@@ -94,43 +94,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-           <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start">
             <div>
               <p className="text-slate-500 text-sm font-medium">Ingresos Mensuales</p>
               <h3 className="text-3xl font-bold text-slate-800 mt-2">${income.toLocaleString()}</h3>
             </div>
-             <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
               <DollarSign className="w-6 h-6" />
             </div>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-           <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start">
             <div>
               <p className="text-slate-500 text-sm font-medium">Gastos Totales</p>
               <h3 className="text-3xl font-bold text-slate-800 mt-2">${expenses.toLocaleString()}</h3>
             </div>
-             <div className="p-2 bg-red-50 rounded-lg text-red-600">
+            <div className="p-2 bg-red-50 rounded-lg text-red-600">
               <ArrowDownRight className="w-6 h-6" />
             </div>
           </div>
         </div>
 
-         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-           <div className="flex justify-between items-start">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
+          <div className="flex justify-between items-start">
             <div>
               <p className="text-slate-500 text-sm font-medium">Fondo de Emergencia</p>
-              <h3 className="text-3xl font-bold text-slate-800 mt-2">$12,400</h3>
+              <h3 className="text-3xl font-bold text-slate-800 mt-2">
+                ${(goals.find(g => g.name === 'Fondo de Emergencia')?.currentAmount || 0).toLocaleString()}
+              </h3>
             </div>
-             <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
+            <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
               <Target className="w-6 h-6" />
             </div>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2 mt-4">
-            <div className="bg-amber-500 h-2 rounded-full" style={{ width: '65%' }}></div>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">65% de meta de 6 meses</p>
+          {(() => {
+            const emergencyGoal = goals.find(g => g.name === 'Fondo de Emergencia');
+            if (emergencyGoal) {
+              const percent = Math.min(100, Math.round((emergencyGoal.currentAmount / emergencyGoal.targetAmount) * 100));
+              return (
+                <>
+                  <div className="w-full bg-slate-100 rounded-full h-2 mt-4">
+                    <div className="bg-amber-500 h-2 rounded-full transition-all duration-500" style={{ width: `${percent}%` }}></div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">{percent}% de meta de ${emergencyGoal.targetAmount.toLocaleString()}</p>
+                </>
+              );
+            }
+            return <p className="text-xs text-slate-400 mt-4 italic">No se ha creado la meta de ahorro.</p>;
+          })()}
         </div>
       </div>
 
@@ -138,7 +151,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center space-x-2 mb-6">
           <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-             <TrendingUp className="w-5 h-5" />
+            <TrendingUp className="w-5 h-5" />
           </div>
           <h4 className="text-lg font-bold text-slate-800">Movimiento de Ingresos y Gastos</h4>
         </div>
@@ -147,20 +160,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
             <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="colorGastos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} tickFormatter={(val) => `$${val}`} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(val) => `$${val}`} />
               <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="3 3" />
-              <Tooltip 
-                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                 formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+              <Tooltip
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
               />
               <Legend verticalAlign="top" height={36} iconType="circle" />
               <Area type="monotone" dataKey="ingresos" name="Ingresos" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIngresos)" />
@@ -182,15 +195,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
                 margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
               >
                 <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" width={110} tick={{fontSize: 11}} />
-                <Tooltip 
-                  cursor={{fill: 'transparent'}}
+                <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 11 }} />
+                <Tooltip
+                  cursor={{ fill: 'transparent' }}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Bar dataKey="value" name="Gasto Real" barSize={20} radius={[0, 4, 4, 0]}>
-                   {ruleAnalysis.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                  {ruleAnalysis.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
                 </Bar>
                 <Bar dataKey="target" name="Meta (Regla)" barSize={10} fill="#e2e8f0" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -199,8 +212,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
           <div className="grid grid-cols-3 gap-2 mt-4 text-center">
             {ruleAnalysis.map((item) => (
               <div key={item.name}>
-                 <p className="text-xs text-slate-500">{item.name}</p>
-                 <p className="font-semibold text-sm" style={{color: item.color}}>${item.value.toLocaleString()}</p>
+                <p className="text-xs text-slate-500">{item.name}</p>
+                <p className="font-semibold text-sm" style={{ color: item.color }}>${item.value.toLocaleString()}</p>
               </div>
             ))}
           </div>
@@ -208,7 +221,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
 
         {/* NEW: Detailed Category Breakdown */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-           <div className="flex items-center space-x-2 mb-4">
+          <div className="flex items-center space-x-2 mb-4">
             <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
               <PieIcon className="w-5 h-5" />
             </div>
@@ -222,9 +235,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
                 <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 12}} />
-                <Tooltip 
-                  cursor={{fill: '#f1f5f9'}}
+                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
+                <Tooltip
+                  cursor={{ fill: '#f1f5f9' }}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   formatter={(value: number) => [`$${value.toLocaleString()}`, 'Monto']}
                 />
@@ -257,8 +270,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, goals }) => 
                 <span>${goal.targetAmount.toLocaleString()}</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
-                <div 
-                  className="bg-indigo-600 h-2 rounded-full transition-all duration-1000" 
+                <div
+                  className="bg-indigo-600 h-2 rounded-full transition-all duration-1000"
                   style={{ width: `${(goal.currentAmount / goal.targetAmount) * 100}%` }}
                 ></div>
               </div>
